@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+1=o=v)hu!#5k^xum)=$)n!2wh62sxetw8e8_$jlaq92rm86h#'
+SECRET_KEY = 'django-insecure-f(c99a1eiboz2@+993g)36)py2$%9qwpg1a++$%wcz6tc^3i&*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -37,7 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'EntrepriseApp','VehiculeApp','OffreApp','ExpeditionApp'
+    'EntrepriseApp',
+    'OffreApp',
+    'VehiculeApp',
+    'ExpeditionApp',
 ]
 
 MIDDLEWARE = [
@@ -76,7 +79,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'elyes.sqlite3',
+        'NAME': BASE_DIR / 'sabrine+.sqlite3',
     }
 }
 
@@ -121,4 +124,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-AUTH_USER_MODEL='EntrepriseApp.Utilisateur'
+
+AUTH_USER_MODEL = 'EntrepriseApp.Utilisateur'
+
