@@ -1,7 +1,13 @@
+from decimal import Decimal
 from django.db import models
-from django.utils import timezone
-from EntrepriseApp.models import Entreprise
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, RegexValidator
+from django.utils import timezone
+
+ref_validator = RegexValidator(
+    regex=r'^EXP-\d{2}-\d{5}$',
+    message="La référence doit être au format EXP-AA-NNNNN."
+)
 
 
 class Expedition(models.Model):
@@ -13,57 +19,68 @@ class Expedition(models.Model):
         ('annulee', 'Annulée'),
     ]
 
-    reference = models.CharField(max_length=20, unique=True, editable=False)
-
+    reference = models.CharField(
+        max_length=20,
+        unique=True,
+        blank=True,
+        editable=False,
+        validators=[ref_validator]
+    )
     ville_depart = models.CharField(max_length=100)
     ville_arrivee = models.CharField(max_length=100)
-    poids_kg = models.DecimalField(max_digits=10, decimal_places=2)
+    poids_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'), "Ne pas accepter un poids nul.")]
+    )
     date_souhaitee = models.DateField()
     description = models.TextField(blank=True, null=True)
-
     statut = models.CharField(
         max_length=20,
         choices=STATUT_CHOICES,
         default='publiee',
     )
-
     entreprise = models.ForeignKey(
-        Entreprise,
+        'EntrepriseApp.Entreprise',
         on_delete=models.CASCADE,
-        related_name='expeditions',
+        related_name='expeditions'
     )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Compatibility property for old code
+    @property
+    def ville_arrive(self):
+        return self.ville_arrivee
+
+    @ville_arrive.setter
+    def ville_arrive(self, value):
+        self.ville_arrivee = value
+
+    @classmethod
+    def _generate_ref(cls):
+        annee = timezone.now().strftime('%y')
+        prefixe = f"EXP-{annee}-"
+        dernier = cls.objects.filter(reference__startswith=prefixe).order_by('reference').last()
+        compteur = (int(dernier.reference.split('-')[-1]) + 1) if dernier else 1
+        if compteur > 99999:
+            raise ValidationError("Limite de 99999 expéditions atteinte pour cette année.")
+        return f"{prefixe}{compteur:05d}"
+
     def clean(self):
         super().clean()
-        if self.entreprise and self.entreprise.type_entreprise != 'c':
-            raise ValidationError("L'entreprise associée doit être de type 'Chargeur'.")
+        if not self.reference:
+            self.reference = self._generate_ref()
+        if self.poids_kg is not None and self.poids_kg <= Decimal('0'):
+            raise ValidationError({'poids_kg': "Ne pas accepter un poids nul."})
+        if self.entreprise_id and self.entreprise.type_entreprise != 'chargeur':
+            raise ValidationError({'entreprise': "Une expédition ne peut être créée que par une entreprise de type chargeur."})
 
     def save(self, *args, **kwargs):
         if not self.reference:
-            self.reference = self._generate_reference()
+            self.reference = self._generate_ref()
+        self.full_clean()
         super().save(*args, **kwargs)
 
-
-    @classmethod
-    def _generate_reference(cls):
-        annee = timezone.now().strftime('%Y')
-        prefix = f"EXP-{annee}-"
-
-        dernier = cls.objects.filter(reference__startswith=prefix).order_by('reference').last()
-
-        if dernier:
-            try:
-                num = int(dernier.reference.split('-')[-1]) + 1
-            except (ValueError, IndexError):
-                num = 1
-        else:
-            num = 1
-
-        return f"{prefix}{num:05d}"
-
-
     def __str__(self):
-        return f"{self.reference} ({self.ville_depart} → {self.ville_arrivee})"
+        return f"{self.reference} ({self.get_statut_display()})"
