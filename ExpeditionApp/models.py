@@ -1,86 +1,79 @@
-from decimal import Decimal
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import MinValueValidator
+from django.core.validators import RegexValidator
 from django.utils import timezone
 
-ref_validator = RegexValidator(
-    regex=r'^EXP-\d{2}-\d{5}$',
-    message="La référence doit être au format EXP-AA-NNNNN."
-)
-
+# Create your models here.
 
 class Expedition(models.Model):
-    STATUT_CHOICES = [
-        ('publiee', 'Publiée'),
-        ('attribuee', 'Attribuée'),
-        ('en_cours', 'En cours'),
-        ('livree', 'Livrée'),
-        ('annulee', 'Annulée'),
-    ]
-
-    reference = models.CharField(
-        max_length=20,
-        unique=True,
-        blank=True,
-        editable=False,
-        validators=[ref_validator]
-    )
+    reference = models.CharField(primary_key = True, unique = True, editable = False, max_length=12,
+                                 validators=[
+                                    RegexValidator(
+                                        regex=r'^EXP-\d{2}-\d{5}$',
+                                        message='La référence doit suivre le format EXP-AA-NNNNN.'
+                                    )
+                                ])
+    date_souhaitee = models.DateField()
     ville_depart = models.CharField(max_length=100)
     ville_arrivee = models.CharField(max_length=100)
-    poids_kg = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'), "Ne pas accepter un poids nul.")]
-    )
-    date_souhaitee = models.DateField()
-    description = models.TextField(blank=True, null=True)
+    poids_kg = models.DecimalField(decimal_places=3, max_digits=10, validators = [MinValueValidator(0.001, "le poids doit être < 0 kg")])
+    description = models.TextField()
     statut = models.CharField(
-        max_length=20,
-        choices=STATUT_CHOICES,
-        default='publiee',
+        max_length=100,
+        choices=[
+            ('publiee', 'Publiée'),
+            ('attribuee', 'Attribuée'),
+            ('en_cours', 'En cours'),
+            ('livree', 'Livrée'),
+            ('annulee', 'Annulée'),
+        ],
+        default='publiee'
     )
+    created_at = models.DateTimeField(auto_now_add = True)
+    updated_at = models.DateTimeField(auto_now = True)
+    
+    # foreign key to entreprise
     entreprise = models.ForeignKey(
         'EntrepriseApp.Entreprise',
         on_delete=models.CASCADE,
-        related_name='expeditions'
+        related_name='expeditions',
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    # Compatibility property for old code
-    @property
-    def ville_arrive(self):
-        return self.ville_arrivee
-
-    @ville_arrive.setter
-    def ville_arrive(self, value):
-        self.ville_arrivee = value
-
-    @classmethod
-    def _generate_ref(cls):
-        annee = timezone.now().strftime('%y')
-        prefixe = f"EXP-{annee}-"
-        dernier = cls.objects.filter(reference__startswith=prefixe).order_by('reference').last()
-        compteur = (int(dernier.reference.split('-')[-1]) + 1) if dernier else 1
-        if compteur > 99999:
-            raise ValidationError("Limite de 99999 expéditions atteinte pour cette année.")
-        return f"{prefixe}{compteur:05d}"
-
+    # vérifier qu'une entreprise est de type chargeur
     def clean(self):
         super().clean()
-        if not self.reference:
-            self.reference = self._generate_ref()
-        if self.poids_kg is not None and self.poids_kg <= Decimal('0'):
-            raise ValidationError({'poids_kg': "Ne pas accepter un poids nul."})
-        if self.entreprise_id and self.entreprise.type_entreprise != 'chargeur':
-            raise ValidationError({'entreprise': "Une expédition ne peut être créée que par une entreprise de type chargeur."})
+        if self.entreprise_id and self.entreprise.type_entreprise != 'chargeur':   #vérifier si l'entreprise existe
+            raise ValidationError({
+                'entreprise': 'Une expédition ne peut être céée que par une entreprise chargeur'
+            })
+
+
+
+    @classmethod
+    def _generate_reference(cls):
+        annee = timezone.now().strftime('%y')
+        prefixe = f"EXP-{annee}-"
+
+        dernier = (
+            cls.objects.filter(reference__startswith=prefixe)
+            .order_by('-reference')
+            .first()
+        )
+
+        compteur = (
+            int(dernier.reference[-5:]) + 1 if dernier else 1
+        )
+
+        if compteur > 99999:
+            raise ValidationError("Limite de références atteinte.")
+
+        return f"{prefixe}{compteur:05d}"
 
     def save(self, *args, **kwargs):
         if not self.reference:
-            self.reference = self._generate_ref()
+            self.reference = self._generate_reference()
+
+        # Appliquer les validateurs avant l'enregistrement
         self.full_clean()
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.reference} ({self.get_statut_display()})"

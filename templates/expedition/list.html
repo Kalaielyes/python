@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expedidtion List</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8f7f4;
+            margin: 0;
+            padding: 50px 20px;
+            color: #263238;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 35px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.06);
+            border-top: 5px solid #0f766e;
+        }
+
+        h1 {
+            text-align: left;
+            color: #172554;
+            margin-bottom: 30px;
+            font-size: 28px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 18px;
+        }
+
+        .expedition-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .expedition-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            background: #fafaf9;
+            border: 1px solid #e7e5e4;
+            border-radius: 9px;
+            padding: 18px 20px;
+            transition: 0.2s;
+        }
+
+        .expedition-item:hover {
+            border-color: #0f766e;
+            background: #f0fdfa;
+        }
+
+        .expedition-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .expedition-title {
+            display: inline-block;
+            font-weight: bold;
+            color: #0f766e;
+            text-decoration: none;
+            margin-right: 8px;
+        }
+
+        .expedition-title:hover {
+            text-decoration: underline;
+        }
+
+        .expedition-meta {
+            color: #64748b;
+            margin-top: 6px;
+            font-size: 14px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            padding: 9px 14px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+
+        .btn-update {
+            background: #ccfbf1;
+            color: #115e59;
+        }
+
+        .btn-update:hover {
+            background: #99f6e4;
+        }
+
+        .btn-create {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            width: 100%;
+            background: #172554;
+            color: white;
+            padding: 14px;
+            border-radius: 7px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-create:hover {
+            background: #0f766e;
+        }
+
+        @media (max-width: 600px) {
+            .expedition-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .container {
+                padding: 20px;
+            }
+        }
+        /* css for popup */
+        /* Modal background */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        /* Modal box */
+        .modal-box {
+            background: white;
+            width: 100%;
+            max-width: 420px;
+            padding: 35px;
+            border-radius: 14px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            animation: appear 0.25s ease;
+        }
+
+        /* Warning icon */
+        .modal-icon {
+            width: 55px;
+            height: 55px;
+            background: #fee2e2;
+            color: #dc2626;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            font-weight: bold;
+            margin: 0 auto 20px;
+        }
+
+        .modal-box h2 {
+            color: #172554;
+            margin-bottom: 12px;
+        }
+
+        .modal-box p {
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .btn-cancel {
+            background: #e7e5e4;
+            color: #334155;
+        }
+
+        .btn-confirm {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: #b91c1c;
+        }
+
+        @keyframes appear {
+            from {
+                opacity: 0;
+                transform: translateY(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li><a href="{% url 'listview_expeditions' %}">Accueil</a></li>
+            <li><a href="{% url 'createview_expedition' %}">Créer une expédition</a></li>
+            {% if user.is_authenticated %}
+                <li>
+                    <h1>Bienvenue, {{ user.first_name }} {{ user.last_name }}!</h1>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit">Déconnexion</button>
+                    </form>
+                </li>
+            {% else %}
+                <li><a href="{% url 'login' %}">Connexion</a></li>
+                <li><a href="{% url 'register' %}">Inscription</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    <div class="container">
+        <h1>Liste des Expéditions</h1>
+    
+        <ul class="expedition-list">
+            {% for expedition in liste %}
+                <li class="expedition-item">
+                    <div class="expedition-info">
+                        <a href="{% url 'detailview_expedition' expedition.pk %}" class="expedition-title">
+                            {{ expedition.reference }}
+                        </a>
+                        <span>- {{ expedition.entreprise }} ({{ expedition.poids_kg }} kg)</span>
+                    </div>
+                    {% if user.is_authenticated %}
+                        <div class="action-buttons">
+                            <a href="{% url 'updateview_expedition' expedition.pk %}" class="btn btn-update">Modifier</a>
+                            
+                            <button type="button"
+                                    class="btn btn-delete"
+                                    data-url="{% url 'deleteview_expedition' expedition.pk %}"
+                                    data-reference="{{ expedition.reference }}"
+                                    onclick="openDeleteModal(this)">
+                                Supprimer
+                            </button>
+                        </div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+            <li>
+                <a href="{% url 'createview_expedition' %}" class="btn btn-create">Créer une nouvelle expédition</a>
+            </li>
+
+        </ul>
+    </div>
+
+    <!-- Popup : Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+
+        <div class="modal-box">
+
+            <div class="modal-icon">!</div>
+
+            <h2>Supprimer l'expédition ?</h2>
+
+            <p>
+                Êtes-vous sûr de vouloir supprimer
+                l'expédition <strong id="expeditionReference"></strong> ?
+                Cette action est irréversible.
+            </p>
+
+            <form method="post" id="deleteForm">
+                {% csrf_token %}
+
+                <div class="modal-actions">
+
+                    <button type="submit" class="btn btn-confirm">
+                        Oui, supprimer
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-cancel"
+                            onclick="closeDeleteModal()">
+                        Annuler
+                    </button>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openDeleteModal(button) {
+
+            // Get the modal
+            const modal = document.getElementById("deleteModal");
+
+            // Get the form
+            const form = document.getElementById("deleteForm");
+
+            // Get the expedition URL
+            const url = button.getAttribute("data-url");
+
+            // Get the expedition reference
+            const reference = button.getAttribute("data-reference");
+
+            // Set the form action
+            form.action = url;
+
+            // Display the expedition reference
+            document.getElementById("expeditionReference").textContent = reference;
+
+            // Show the modal
+            modal.style.display = "flex";
+        }
+
+        function closeDeleteModal() {
+
+            document.getElementById("deleteModal").style.display = "none";
+
+        }
+
+        // Close modal when clicking outside the box
+        document.getElementById("deleteModal").addEventListener("click", function(event) {
+
+            if (event.target === this) {
+                closeDeleteModal();
+            }
+
+        });
+
+        // Close modal with Escape key
+        document.addEventListener("keydown", function(event) {
+
+            if (event.key === "Escape") {
+                closeDeleteModal();
+            }
+
+        });
+    </script>
+
+</body>
+</html>
+

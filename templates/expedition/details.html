@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expedition Details</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px 15px;
+            background: #f8f7f4;
+            font-family: Arial, sans-serif;
+            color: #263238;
+        }
+
+        .expedition-details {
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 35px;
+            background: white;
+            border-radius: 12px;
+            border-top: 5px solid #0f766e;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+        }
+
+        .expedition-details__reference {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #e7e5e4;
+        }
+
+        .expedition-details__label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            font-weight: bold;
+        }
+
+        .expedition-details__reference strong {
+            font-size: 18px;
+            color: #0f766e;
+        }
+
+        .expedition-details__description {
+            padding: 25px 0;
+        }
+
+        .expedition-details__description-title {
+            margin: 0 0 12px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            font-weight: bold;
+        }
+
+        .expedition-details__description-text {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.8;
+            color: #334155;
+        }
+
+        .expedition-details__status {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            border-radius: 6px;
+            background: #ccfbf1;
+            color: #115e59;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .expedition-details__status-indicator {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #0f766e;
+        }
+
+        .expedition-details__actions {
+            margin-top: 30px;
+        }
+
+        .expedition-details__back-link {
+            display: inline-block;
+            text-decoration: none;
+            background: #172554;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .expedition-details__back-link:hover {
+            background: #0f766e;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="expedition-details">
+        <div class="expedition-details__reference">
+            <span class="expedition-details__label">Référence</span>
+            <strong>{{ expedition.reference }}</strong>
+        </div>
+    
+        <div class="expedition-details__description">
+            <p class="expedition-details__description-title">Description</p>
+            <p class="expedition-details__description-text">{{ expedition.description }}</p>
+        </div>
+    
+        <div class="expedition-details__status">
+            <span class="expedition-details__status-indicator"></span>
+            {{ expedition.statut }}
+        </div>
+    
+        <div class="expedition-details__actions">
+            <a href="{% url 'listview_expeditions' %}" class="expedition-details__back-link">
+                Retour à la liste des expéditions
+            </a>
+        </div>
+    </div>
+</body>
+</html>

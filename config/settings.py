@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8=swr6jp0-l9%&-5uha2p&jtcowv0yd7s#r=fha!#n4_4q-6xx'
+SECRET_KEY = 'django-insecure-0jk6o1056)%_-sx4y7b($az3uzmjk4-fowm8_#e6y@8m^i%y$e'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -38,9 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'EntrepriseApp',
-    'ExpeditionApp',
-    'OffreApp',
     'VehiculeApp',
+    'OffreApp',
+    'ExpeditionApp',
 ]
 
 MIDDLEWARE = [
@@ -58,7 +58,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],#emplacement des templates
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -79,7 +79,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'elyes.sqlite3',
     }
 }
 
@@ -125,4 +125,10 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# tell to take the user we created from the app EntrepriseApp and not the one created by default
 AUTH_USER_MODEL = 'EntrepriseApp.Utilisateur'
+
+LOGIN_URL = '/login/'  # URL to redirect users to the login page
+LOGIN_REDIRECT_URL = 'listview_expeditions'  # URL to redirect users after successful login
+
+LOGOUT_REDIRECT_URL = 'login'  # URL to redirect users after logout
